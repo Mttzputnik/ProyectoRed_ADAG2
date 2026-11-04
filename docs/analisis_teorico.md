@@ -1,53 +1,101 @@
-# Análisis teórico — Proyecto Red
+# Análisis teórico — Proyecto Red ADAG2
 
-## 1. Reparto discreto de presupuesto
+## 1. Asignación discreta de presupuesto
 
-**Entrada.** `N` nodos, presupuesto entero `B` y para cada nodo `i` una lista `g_i(1),...,g_i(m_i)` de ganancias marginales. Se exige `g_i(j) >= 0` y `g_i(j+1) <= g_i(j)`. La utilidad de asignar `x_i` unidades es `u_i(x_i)=sum_{j=1}^{x_i} g_i(j)`.
+Sean $N$ nodos y un presupuesto entero $B$. Para cada nodo $i$, se conoce una secuencia de ganancias marginales $g_i(1), ..., g_i(m_i)$, que satisface:
 
-**Salida.** Enteros `x_i >= 0`, con `sum_i x_i=B`, que maximizan `sum_i u_i(x_i)`.
+$$
+g_i(j) \geq 0, \qquad g_i(j+1) \leq g_i(j).
+$$
 
-**Algoritmo.** Mantener en un max-heap la siguiente ganancia marginal disponible de cada nodo. Extraer el máximo, asignar esa unidad al nodo y volver a insertar su siguiente marginal, si existe.
+La utilidad de asignar $x_i$ unidades al nodo $i$ es:
 
-**Optimalidad por intercambio.** Considérese la secuencia formada por todas las ganancias marginales disponibles. Por concavidad discreta, las marginales de cada nodo están en orden no creciente. Una asignación factible selecciona un prefijo de la secuencia marginal de cada nodo. Si una solución óptima no seleccionara las `B` mayores marginales factibles, existiría una unidad seleccionada con ganancia menor que una unidad no seleccionada disponible como siguiente marginal. Intercambiar ambas no viola la estructura de prefijos (o, equivalentemente, se desplaza una unidad dentro del mismo nodo usando marginales no crecientes) y no reduce la utilidad; si la desigualdad es estricta, la mejora contradice optimalidad. Por tanto, extraer iterativamente la mayor marginal produce una asignación óptima.
+$$
+u_i(x_i)=\sum_{j=1}^{x_i}g_i(j).
+$$
 
-**Complejidad.** Inicializar el heap cuesta `O(N)`. Cada una de las `B` extracciones y reinserciones cuesta `O(log N)`. Por tanto `T(N,B)=O(N+B log N)`, que para `B>=N` se expresa usualmente como `O(B log N)`. El espacio auxiliar es `O(N)`. La implementación también valida que el presupuesto no exceda la capacidad marginal disponible.
+Se busca maximizar $\sum_i u_i(x_i)$, sujeto a $\sum_i x_i=B$ y $0\leq x_i\leq m_i$.
 
-## 2. Selección de participantes: Maximum Coverage
+### Algoritmo y optimalidad
 
-**Entrada.** Universo `U`, colección `S_1,...,S_N` y entero `k<N`.
+El algoritmo mantiene en un max-heap la siguiente ganancia marginal disponible de cada nodo. Extrae la mayor, asigna esa unidad y agrega la siguiente marginal de ese mismo nodo, si existe. La condición de marginales no crecientes garantiza que una unidad posterior de un nodo nunca puede ser preferible a una unidad anterior de ese mismo nodo.
 
-**Salida.** Un conjunto `A` de exactamente `k` índices que maximiza `f(A)=|union_{i in A} S_i|`.
+Por tanto, el algoritmo selecciona las $B$ mayores marginales respetando los prefijos de cada secuencia. Mediante intercambio, cualquier asignación que omita una marginal disponible mayor y conserve una menor puede mejorarse o igualarse sustituyendo la unidad correspondiente. El procedimiento voraz es óptimo para este modelo separable y cóncavo discreto, siempre que el presupuesto sea factible.
 
-**Submodularidad.** Para `A subseteq B` y nodo `v` no seleccionado, `f(A union {v})-f(A)=|S_v minus union(A)|` es al menos `|S_v minus union(B)|=f(B union {v})-f(B)`. Es decir, hay rendimientos marginales decrecientes. La función es además monótona y no negativa.
+### Complejidad
 
-**NP-dureza (reducción desde Maximum Coverage).** Una instancia de Maximum Coverage consiste en un universo `U`, subconjuntos `S_1,...,S_N` y un límite `k`; pregunta qué `k` subconjuntos maximizan la cantidad de elementos cubiertos. Se transforma en una instancia de selección de nodos creando un nodo por cada subconjunto y definiendo la utilidad de un grupo de nodos como el tamaño de la unión de sus subconjuntos. La transformación es polinomial, conserva exactamente las soluciones y los valores objetivo. Por tanto, si se resolviera óptimamente la selección general en tiempo polinomial, también se resolvería Maximum Coverage en tiempo polinomial. Como Maximum Coverage es NP-difícil (a partir de Set Cover/Maximum Coverage según la formulación de decisión), la selección es NP-difícil.
+La construcción del heap con `heapq.heapify` cuesta $O(N)$. Cada una de las $B$ extracciones y posibles inserciones cuesta $O(\log N)$. La complejidad es:
 
-**Voraz y garantía.** En cada paso se incorpora el nodo de mayor ganancia marginal. Para funciones monótonas submodulares no negativas con restricción de cardinalidad `k`, el resultado clásico de Nemhauser, Wolsey y Fisher (1978) garantiza `f(A_greedy) >= (1-1/e) f(A_opt)`, aproximadamente `0.632`. Esta garantía corresponde al problema base de cardinalidad; se debe comprobar empíricamente la razón respecto al óptimo exacto en instancias pequeñas, sin confundir esa comprobación con la prueba general.
+$$
+O(N+B\log N)
+$$
 
-**Complejidad.** Hay `k` iteraciones y en cada una se evalúan hasta `N` nodos: `O(Nk)` evaluaciones marginales. Con conjuntos explícitos, cada marginal calcula una diferencia de conjuntos, cuyo costo depende de la representación y del tamaño del universo; el benchmark reporta tiempo real además del conteo abstracto de evaluaciones.
+El heap usa $O(N)$ espacio auxiliar. El resultado almacena además las $B$ ganancias seleccionadas.
 
-**Óptimo exacto de referencia.** Enumerar todos los subconjuntos de tamaño `k` cuesta `binom(N,k)` evaluaciones. Con evaluación directa de un universo de tamaño `|U|`, una cota es `O(binomial(N,k) * |U|)`. Se utiliza únicamente para tamaños pequeños y para medir la calidad del algoritmo aproximado.
+## 2. Maximum Coverage
 
-## 3. Variante con costos
+Sea $U$ un universo y $S_1, ..., S_N \subseteq U$ los conjuntos asociados a los nodos. Para una selección $A$, la utilidad es:
 
-Cada nodo tiene costo positivo `c_i` y se impone `sum_{i in A} c_i <= C`. La regla implementada selecciona iterativamente por ganancia marginal/costo entre nodos factibles. Es una heurística de referencia; **no se afirma que tenga por sí sola la garantía `1-1/e`**. El enunciado exige una garantía específica para Budgeted Maximum Coverage: el informe final debe identificar el algoritmo teórico exacto, sus hipótesis (incluido el tratamiento de elementos individuales cuando corresponda) y citar la cota correcta antes de atribuirla a resultados experimentales.
+$$
+f(A)=\left|\bigcup_{i\in A}S_i\right|.
+$$
 
-## 4. Rondas, fallos y vecinos
+La función es no negativa y monótona. También es submodular: si $A\subseteq B$, la ganancia de añadir un nodo $v$ a $A$ es:
 
-La simulación genera fallos independientes por ronda con probabilidad `p`. Los nodos fallidos no pueden ser seleccionados en esa ronda. Se aplica Maximum Coverage voraz sobre los nodos activos. La asignación de presupuesto de la ronda `t` escala las ganancias marginales de cada nodo en `t+1` por `1 + alpha * suma(x_j)` sobre sus vecinos `j` en el grafo.
+$$
+f(A\cup\{v\})-f(A)
+=\left|S_v\setminus\bigcup_{i\in A}S_i\right|,
+$$
 
-Al fijar la influencia al inicio de una ronda, las marginales de cada nodo siguen siendo no crecientes si las marginales base lo eran. Sin embargo, una utilidad conjunta con externalidades puede dejar de ser submodular. Por ello, la garantía `1-1/e` no se extiende automáticamente a la variante acoplada; debe verificarse/probarse la propiedad para la función concreta o presentarse como simulación heurística separada.
+que no es menor que la ganancia de añadirlo a $B$, porque $B$ ya cubre al menos los elementos cubiertos por $A$.
 
-## 5. Validación experimental
+Con restricción de cardinalidad $|A|\leq k$, el algoritmo voraz que elige la mayor ganancia marginal obtiene la garantía clásica $1-1/e$ para funciones monótonas submodulares no negativas (Nemhauser, Wolsey y Fisher, 1978). Esta garantía es aproximadamente 0.632 y corresponde al problema de cardinalidad descrito, no a todas las variantes del proyecto.
 
-`experiments/benchmark.py` genera cinco tamaños `N={20,40,80,160,320}`, mide medianas de varias ejecuciones y exporta CSV y gráficas. Para una entrega rigurosa:
+Maximum Coverage es NP-difícil. Una instancia de Maximum Coverage se transforma directamente en selección de nodos creando un nodo por cada conjunto y manteniendo la misma función de unión; la transformación conserva soluciones y valores objetivo.
 
-- Mantener fija la semilla y reportar repeticiones.
-- Variar `N` y declarar cómo crecen `B`, `k` y `|U|`.
-- Comparar tiempos observados con `B log N` y `N k`.
-- Medir el exacto solo en tamaños pequeños, pues su crecimiento es combinatorio.
-- Reportar también la razón `f(greedy)/f(exacto)` en instancias donde el exacto sea computable.
+### Complejidad
 
-## Referencia clásica
+El algoritmo voraz realiza $O(Nk)$ evaluaciones marginales. Con conjuntos explícitos, cada evaluación calcula una diferencia de conjuntos y su costo depende del tamaño de los conjuntos y de la representación. Por ello, $O(Nk)$ cuenta evaluaciones, no necesariamente operaciones elementales.
+
+El método exacto enumera `binomial(N, k)` subconjuntos. Si cada unión se evalúa recorriendo un universo de tamaño $|U|$, una cota simple es $O(binomial(N,k) |U|)$.
+
+## 3. Maximum Coverage con costos
+
+Cada nodo tiene un costo positivo $c_i$, y la restricción es:
+
+$$
+\sum_{i\in A}c_i\leq C.
+$$
+
+La implementación utiliza una heurística que selecciona nodos factibles por razón ganancia marginal/costo. No se afirma que esta regla aislada alcance una garantía $1-1/e$. Las garantías de aproximación para Budgeted Maximum Coverage dependen del algoritmo concreto y de condiciones adicionales; no deben transferirse desde el caso de cardinalidad sin una demostración aplicable.
+
+## 4. Simulación multirronda y externalidades
+
+En cada ronda, cada nodo falla independientemente con probabilidad $p$. Los nodos activos son candidatos para Maximum Coverage. Las ganancias marginales de la siguiente ronda se escalan mediante:
+
+$$
+g_i^{(t+1)}(j)=g_i(j)
+\left(1+\alpha\sum_{v\in N(i)}x_v^{(t)}\right),
+$$
+
+donde $N(i)$ es el vecindario de $i$, $x_v^{(t)}$ es la asignación de la ronda anterior y $\alpha\geq0$ controla la influencia.
+
+Al fijarse el factor al comienzo de la ronda, multiplicar una secuencia por un factor no negativo conserva su orden no creciente. Sin embargo, esto no demuestra submodularidad de una función conjunta que incorpore interacciones entre nodos. En consecuencia, la garantía de Maximum Coverage no se extiende automáticamente a la simulación acoplada.
+
+La simulación admite identificadores de nodos arbitrarios. Las filas de ganancias marginales deben estar alineadas con el orden de inserción de las claves del mapeo de conjuntos.
+
+## 5. Diseño experimental
+
+El benchmark registra mediana, promedio, desviación estándar y número de repeticiones. También registra parámetros de entrada y, en las instancias pequeñas, razón de utilidad respecto al método exacto.
+
+Para interpretar resultados:
+
+- Mantener semilla, versión de Python y condiciones de equipo documentadas.
+- Declarar cómo varían $B$, $k$ y $|U|$ cuando crece $N$.
+- No usar los métodos exactos en tamaños que provoquen enumeraciones excesivas.
+- Separar mediciones de tiempo de argumentos teóricos de complejidad.
+- Considerar la desviación entre repeticiones; no presentar un tiempo aislado como conclusión general.
+
+## Referencia
 
 Nemhauser, G. L., Wolsey, L. A., & Fisher, M. L. (1978). *An analysis of approximations for maximizing submodular set functions—I*. Mathematical Programming, 14, 265–294.
