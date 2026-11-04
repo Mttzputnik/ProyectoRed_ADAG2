@@ -1,0 +1,11 @@
+algorithm,n,budget,k,seconds
+allocation_heap,20,400,,0.0019010530002105952
+maximum_coverage_greedy,20,,5,0.00015536000000793138
+allocation_heap,40,800,,0.00718425400009437
+maximum_coverage_greedy,40,,10,0.0010985730000356853
+allocation_heap,80,1600,,0.028489963000083662
+maximum_coverage_greedy,80,,20,0.0071208709998700215
+allocation_heap,160,3200,,0.11249341099983212
+maximum_coverage_greedy,160,,40,0.03765484900009142
+allocation_heap,320,6400,,0.46726693499999783
+maximum_coverage_greedy,320,,80,0.3410846560000209
