@@ -39,6 +39,11 @@ class AllocationTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 greedy_allocate([[2, 1]], value)
 
+    def test_rejects_boolean_or_string_marginals(self):
+        for value in (True, "2"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                greedy_allocate([[value]], 0)
+
 
 class SelectionTests(unittest.TestCase):
     def test_greedy_is_bounded_by_exact(self):
@@ -64,6 +69,11 @@ class SelectionTests(unittest.TestCase):
         for costs in ({"x": 0, "y": 1}, {"x": -1, "y": 1}, {"x": math.inf, "y": 1}):
             with self.subTest(costs=costs), self.assertRaises(ValueError):
                 greedy_budgeted_coverage(sets, costs, 2)
+
+    def test_budgeted_ties_follow_mapping_order(self):
+        sets = {"first": {1}, "second": {2}}
+        result = greedy_budgeted_coverage(sets, {"first": 1, "second": 1}, 1)
+        self.assertEqual(result.selected, ("first",))
 
     def test_rejects_invalid_k(self):
         for k in (True, 1.5, -1, 3):
@@ -105,6 +115,11 @@ class SimulationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             run_rounds({"a": {1}}, [[2, 1]], rounds=1, k=1,
                        budget_per_round=1, graph={"a": {"missing"}})
+
+    def test_validates_marginals_for_failed_nodes_too(self):
+        with self.assertRaises(ValueError):
+            run_rounds({"a": {1}, "b": {2}}, [[2, 1], [1, 2]],
+                       rounds=1, k=1, budget_per_round=1, failure_probability=1)
 
     def test_rejects_invalid_parameters(self):
         for kwargs in (

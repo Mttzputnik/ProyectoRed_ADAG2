@@ -1,17 +1,14 @@
 """Simulación multirronda con fallos y externalidades temporales de vecindad.
 
-La secuencia de marginales se alinea con el orden de inserción de sets_by_node.
-Los identificadores de nodo pueden ser arbitrarios y no necesitan ser enteros
-consecutivos. La salida allocation conserva ese mismo orden.
+Las filas de marginal_gains se alinean con el orden de inserción de sets_by_node.
+Los identificadores pueden ser arbitrarios; allocation conserva ese orden.
 """
 from __future__ import annotations
-
 import math
 import random
 from dataclasses import dataclass
 from numbers import Integral, Real
 from typing import Hashable, Mapping, Sequence
-
 from .allocation import greedy_allocate
 from .selection import greedy_max_coverage
 
@@ -59,12 +56,21 @@ def run_rounds(
         raise ValueError("neighbor_alpha debe ser un número finito >= 0")
 
     nodes = list(sets_by_node)
-    if len(marginal_gains) != len(nodes):
-        raise ValueError("Debe existir una función marginal por nodo, en el mismo orden del mapeo")
+    try:
+        marginal_count = len(marginal_gains)
+    except TypeError as exc:
+        raise ValueError("marginal_gains debe ser una secuencia") from exc
+    if marginal_count != len(nodes):
+        raise ValueError("Debe existir una función marginal por nodo, alineada al orden del mapeo")
+    greedy_allocate(marginal_gains, 0)  # valida también las filas de nodos que fallen
+
     if graph is not None:
         if not isinstance(graph, Mapping):
             raise ValueError("graph debe ser un mapeo de nodo a conjunto de vecinos")
-        unknown = {neighbor for neighbors in graph.values() for neighbor in neighbors if neighbor not in sets_by_node}
+        for node, neighbors in graph.items():
+            if not isinstance(neighbors, (set, frozenset)):
+                raise ValueError(f"Los vecinos de {node!r} deben ser un conjunto")
+        unknown = {v for neighbors in graph.values() for v in neighbors if v not in sets_by_node}
         unknown.update(node for node in graph if node not in sets_by_node)
         if unknown:
             raise ValueError(f"El grafo contiene nodos desconocidos: {unknown!r}")
@@ -72,8 +78,7 @@ def run_rounds(
     node_to_index = {node: index for index, node in enumerate(nodes)}
     rng = random.Random(seed)
     previous_allocation = [0] * len(nodes)
-    results: list[RoundResult] = []
-
+    results = []
     for round_number in range(1, rounds + 1):
         active = [node for node in nodes if rng.random() >= failure_probability]
         allocation = [0] * len(nodes)
@@ -85,10 +90,10 @@ def run_rounds(
         active_sets = {node: sets_by_node[node] for node in active}
         selection = greedy_max_coverage(active_sets, min(int(k), len(active)))
         selected = list(selection.selected)
-        adjusted: list[list[float]] = []
+        adjusted = []
         for node in selected:
             neighbors = (graph or {}).get(node, set())
-            influence = math.fsum(previous_allocation[node_to_index[neighbor]] for neighbor in neighbors)
+            influence = math.fsum(previous_allocation[node_to_index[v]] for v in neighbors)
             factor = 1.0 + float(neighbor_alpha) * influence
             adjusted.append([float(gain) * factor for gain in marginal_gains[node_to_index[node]]])
 
@@ -100,15 +105,9 @@ def run_rounds(
             for local_index, node in enumerate(selected):
                 allocation[node_to_index[node]] = result.allocation[local_index]
 
-        results.append(
-            RoundResult(
-                round_number,
-                tuple(active),
-                tuple(selected),
-                selection.utility,
-                tuple(allocation),
-                allocation_utility,
-            )
-        )
+        results.append(RoundResult(
+            round_number, tuple(active), tuple(selected), selection.utility,
+            tuple(allocation), allocation_utility,
+        ))
         previous_allocation = allocation
     return results

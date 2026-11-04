@@ -6,7 +6,7 @@ El repositorio incluye algoritmos voraces, verificadores exactos para instancias
 
 ## Objetivos
 
-1. Seleccionar hasta (k) nodos para maximizar la cobertura de elementos.
+1. Seleccionar hasta $k$ nodos para maximizar la cobertura de elementos.
 2. Distribuir un presupuesto entero entre los nodos seleccionados maximizando la utilidad total.
 3. Simular rondas con fallos independientes y efectos temporales entre vecinos.
 4. Comparar soluciones voraces con métodos exactos en instancias pequeñas y estudiar tiempos de ejecución.
@@ -27,8 +27,8 @@ El repositorio incluye algoritmos voraces, verificadores exactos para instancias
 - Las ganancias marginales de cada nodo son finitas, no negativas y no crecientes.
 - El presupuesto de asignación se expresa en unidades enteras.
 - Maximum Coverage maximiza el tamaño de la unión de los conjuntos asociados a los nodos seleccionados.
-- En cada ronda, los fallos son independientes y tienen una probabilidad común (p).
-- La asignación de la ronda anterior escala las ganancias marginales de los vecinos mediante (1 + \alpha \sum_j x_j).
+- En cada ronda, los fallos son independientes y tienen una probabilidad común $p$.
+- La asignación de la ronda anterior escala las ganancias marginales de los vecinos mediante $1 + \alpha \sum_j x_j$.
 - Las ganancias marginales se alinean con el orden de inserción de las claves de `sets_by_node`; los identificadores pueden ser arbitrarios.
 - Las semillas permiten reproducir los escenarios sintéticos.
 
@@ -107,10 +107,10 @@ El CSV registra parámetros, repeticiones, mediana, promedio, desviación están
 
 | Algoritmo | Complejidad / garantía |
 |---|---|
-| `greedy_allocate` | (O(N + B\log N)) tiempo; óptimo bajo concavidad discreta y factibilidad del presupuesto. |
-| `greedy_max_coverage` | (O(Nk)) evaluaciones marginales; garantía clásica (1-1/e) para Maximum Coverage monótono con cardinalidad. El costo real depende de las operaciones sobre conjuntos. |
-| `exact_max_coverage` | ({N \choose k}) candidatos; exponencial. |
-| `greedy_budgeted_coverage` | Heurística marginal/costo; no se le atribuye automáticamente la garantía (1-1/e). |
+| `greedy_allocate` | $O(N + B\log N)$ tiempo; óptimo bajo concavidad discreta y factibilidad del presupuesto. |
+| `greedy_max_coverage` | $O(Nk)$ evaluaciones marginales; garantía clásica $1-1/e$ para Maximum Coverage monótono con cardinalidad. El costo real depende de las operaciones sobre conjuntos. |
+| `exact_max_coverage` | `binomial(N, k)` candidatos; exponencial. |
+| `greedy_budgeted_coverage` | Heurística marginal/costo; no se le atribuye automáticamente la garantía $1-1/e$. |
 | `run_rounds` | Depende del número de rondas, nodos activos, selección y asignación de cada ronda. Las externalidades no heredan automáticamente garantías de submodularidad. |
 
 ## Resultados y reproducibilidad

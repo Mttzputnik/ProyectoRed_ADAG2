@@ -19,3 +19,5 @@ jobs:
           python-version: "3.12"
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+      - name: Benchmark smoke test
+        run: python -c "from experiments.benchmark import run; run(repetitions=1, output_dir='benchmark-smoke')"

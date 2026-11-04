@@ -1,6 +1,5 @@
 """Algoritmos para Maximum Coverage y su variante con costos."""
 from __future__ import annotations
-
 import math
 from dataclasses import dataclass
 from itertools import combinations
@@ -40,21 +39,14 @@ def coverage_utility(selected: Iterable[Hashable], sets_by_node: Mapping[Hashabl
 
 
 def greedy_max_coverage(sets_by_node: Mapping[Hashable, set], k: int) -> SelectionResult:
-    """Voraz de Maximum Coverage (1 - 1/e) para cardinalidad.
-
-    Realiza O(N*k) evaluaciones marginales. El costo de cada evaluación
-    depende de la implementación y tamaño de los conjuntos.
-    """
+    """Voraz de Maximum Coverage; garantía 1 - 1/e para restricción cardinal."""
     _validate_sets(sets_by_node)
     nodes = list(sets_by_node)
     _validate_k(k, len(nodes))
-    chosen: list[Hashable] = []
-    gains: list[float] = []
-    covered: set = set()
+    chosen, gains, covered = [], [], set()
     remaining = nodes.copy()
     for _ in range(k):
-        best_node = None
-        best_gain = -1
+        best_node, best_gain = None, -1
         for node in remaining:
             gain = len(sets_by_node[node] - covered)
             if gain > best_gain:
@@ -73,8 +65,7 @@ def exact_max_coverage(sets_by_node: Mapping[Hashable, set], k: int) -> Selectio
     _validate_sets(sets_by_node)
     nodes = list(sets_by_node)
     _validate_k(k, len(nodes))
-    best_nodes: tuple[Hashable, ...] = ()
-    best_value = -1
+    best_nodes, best_value = (), -1
     for candidate in combinations(nodes, k):
         value = coverage_utility(candidate, sets_by_node)
         if value > best_value:
@@ -83,9 +74,7 @@ def exact_max_coverage(sets_by_node: Mapping[Hashable, set], k: int) -> Selectio
 
 
 def greedy_budgeted_coverage(
-    sets_by_node: Mapping[Hashable, set],
-    costs: Mapping[Hashable, float],
-    budget: float,
+    sets_by_node: Mapping[Hashable, set], costs: Mapping[Hashable, float], budget: float
 ) -> SelectionResult:
     """Heurística marginal/costo; no atribuye por sí sola garantía 1 - 1/e."""
     _validate_sets(sets_by_node)
@@ -93,8 +82,7 @@ def greedy_budgeted_coverage(
         raise ValueError("budget debe ser un número finito >= 0")
     if not isinstance(costs, Mapping):
         raise ValueError("costs debe ser un mapeo")
-
-    normalized_costs: dict[Hashable, float] = {}
+    normalized_costs = {}
     for node in sets_by_node:
         if node not in costs:
             raise ValueError(f"Falta el costo del nodo {node!r}")
@@ -103,22 +91,17 @@ def greedy_budgeted_coverage(
             raise ValueError(f"El costo de {node!r} debe ser positivo y finito")
         normalized_costs[node] = float(cost)
 
-    chosen: list[Hashable] = []
-    gains: list[float] = []
-    covered: set = set()
-    remaining = set(sets_by_node)
+    chosen, gains, covered = [], [], set()
+    remaining = list(sets_by_node)  # orden estable para resolver empates
     spent = 0.0
     while remaining:
         feasible = [node for node in remaining if spent + normalized_costs[node] <= budget]
         if not feasible:
             break
-        node = max(
-            feasible,
-            key=lambda item: (
-                len(sets_by_node[item] - covered) / normalized_costs[item],
-                -normalized_costs[item],
-            ),
-        )
+        node = max(feasible, key=lambda item: (
+            len(sets_by_node[item] - covered) / normalized_costs[item],
+            -normalized_costs[item],
+        ))
         gain = len(sets_by_node[node] - covered)
         if gain <= 0:
             break
