@@ -159,6 +159,23 @@ Los resultados se guardan en la carpeta `results/`:
 
 Los tiempos dependen del equipo y del entorno de ejecución. Para comparar ejecuciones, se recomienda utilizar el mismo equipo, versión de Python y condiciones de carga.
 
+### Resultados obtenidos
+
+En una ejecución del benchmark se obtuvieron los siguientes tiempos:
+
+| N | Presupuesto | K | Asignación con heap (s) | Maximum Coverage Greedy (s) |
+|---:|---:|---:|---:|---:|
+| 20 | 400 | 5 | 0.0019010530 | 0.0001553600 |
+| 40 | 800 | 10 | 0.0071842540 | 0.0010985730 |
+| 80 | 1600 | 20 | 0.0284899630 | 0.0071208710 |
+| 160 | 3200 | 40 | 0.1124934110 | 0.0376548490 |
+| 320 | 6400 | 80 | 0.4672669350 | 0.3410846570 |
+
+Los tiempos corresponden a una ejecución concreta y están expresados en segundos. En los cinco tamaños evaluados, el tiempo medido aumentó al incrementar el tamaño de entrada. Para N = 320, la asignación con heap registró aproximadamente 0.4673 s y Maximum Coverage Greedy aproximadamente 0.3411 s.
+
+Esta tabla permite comparar el comportamiento observado en el entorno de prueba. No constituye por sí sola una demostración experimental de las cotas asintóticas: los tiempos dependen del equipo, del entorno y de las condiciones de ejecución.
+
+
 ## Estructura del repositorio
 
 ```text
