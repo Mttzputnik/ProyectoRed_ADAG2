@@ -1,145 +1,84 @@
 # Proyecto Red — ADAG2
 
-Implementación académica de algoritmos de optimización para un problema de selección de nodos y asignación discreta de presupuesto, con simulación por rondas, fallos y efectos de vecindad.
+Implementación académica de algoritmos de optimización para selección de nodos, asignación discreta de presupuesto y simulación multirronda con fallos y efectos de vecindad.
 
-El repositorio reúne algoritmos voraces, verificadores exactos para instancias pequeñas y experimentos reproducibles. Los datos de los experimentos son sintéticos y sirven para estudiar el comportamiento de las implementaciones; no representan por sí solos resultados de un sistema real.
+El repositorio incluye algoritmos voraces, verificadores exactos para instancias pequeñas, pruebas automatizadas y experimentos reproducibles. Los generadores producen instancias sintéticas: sus resultados no representan por sí solos mediciones de una red real.
 
-## Contenido
+## Objetivos
 
-- [Objetivo y alcance](#objetivo-y-alcance)
-- [Algoritmos implementados](#algoritmos-implementados)
-- [Modelo y supuestos](#modelo-y-supuestos)
-- [Requisitos](#requisitos)
-- [Instalación y ejecución](#instalación-y-ejecución)
-- [Pruebas](#pruebas)
-- [Experimentos](#experimentos)
-- [Estructura del repositorio](#estructura-del-repositorio)
-- [Complejidad](#complejidad)
-- [Limitaciones](#limitaciones)
-- [Análisis teórico](#análisis-teórico)
+1. Seleccionar hasta (k) nodos para maximizar la cobertura de elementos.
+2. Distribuir un presupuesto entero entre los nodos seleccionados maximizando la utilidad total.
+3. Simular rondas con fallos independientes y efectos temporales entre vecinos.
+4. Comparar soluciones voraces con métodos exactos en instancias pequeñas y estudiar tiempos de ejecución.
 
-## Objetivo y alcance
+## Algoritmos
 
-El proyecto estudia dos decisiones relacionadas:
-
-1. **Selección de nodos:** escoger hasta un número determinado de nodos para maximizar la cobertura de elementos.
-2. **Asignación de presupuesto:** distribuir unidades discretas entre los nodos seleccionados para maximizar la suma de sus utilidades.
-
-Además, se incluye una simulación de varias rondas. En ella pueden ocurrir fallos de nodos y la asignación de una ronda puede influir en las ganancias marginales de sus vecinos en la ronda siguiente.
-
-## Algoritmos implementados
-
-| Módulo | Algoritmo | Propósito |
+| Módulo | Función | Descripción |
 |---|---|---|
-| `src/allocation.py` | `greedy_allocate` | Reparto discreto mediante un max-heap. Es óptimo bajo la hipótesis de ganancias marginales no crecientes. |
-| `src/allocation.py` | `brute_force_allocate` | Verificador exacto por enumeración para instancias pequeñas. |
-| `src/selection.py` | `greedy_max_coverage` | Selección voraz para Maximum Coverage con restricción de cardinalidad. |
-| `src/selection.py` | `exact_max_coverage` | Solución exacta por enumeración para comparar instancias pequeñas. |
-| `src/selection.py` | `greedy_budgeted_coverage` | Heurística basada en ganancia marginal/costo para la variante con presupuesto. |
-| `src/simulation.py` | `run_rounds` | Simulación temporal de selección, asignación, fallos y efectos de vecindad. |
+| `src/allocation.py` | `greedy_allocate` | Asignación discreta óptima cuando las ganancias marginales son no negativas y no crecientes. |
+| `src/allocation.py` | `brute_force_allocate` | Verificador exacto para instancias pequeñas. |
+| `src/selection.py` | `greedy_max_coverage` | Maximum Coverage con restricción de cardinalidad. |
+| `src/selection.py` | `exact_max_coverage` | Solución exacta por enumeración. |
+| `src/selection.py` | `greedy_budgeted_coverage` | Heurística marginal/costo para cobertura con presupuesto. |
+| `src/simulation.py` | `run_rounds` | Simulación multirronda de fallos, selección, asignación e influencia vecinal. |
 
 ## Modelo y supuestos
 
-- El presupuesto de asignación se expresa en **unidades enteras**.
-- Cada nodo tiene una secuencia de ganancias marginales no negativas y no crecientes. Esta condición representa una utilidad discreta cóncava.
-- En Maximum Coverage, cada nodo representa un conjunto de elementos y la utilidad es el tamaño de la unión de los conjuntos seleccionados.
-- En la simulación, cada nodo falla de manera independiente con una probabilidad fija por ronda. Los nodos que fallan no participan en esa ronda.
-- La asignación de una ronda modifica las ganancias marginales base de los vecinos en la ronda siguiente mediante un factor de influencia. La semilla aleatoria permite repetir los mismos escenarios sintéticos.
-- Los generadores de instancias reciben una semilla para facilitar la reproducibilidad.
+- Las ganancias marginales de cada nodo son finitas, no negativas y no crecientes.
+- El presupuesto de asignación se expresa en unidades enteras.
+- Maximum Coverage maximiza el tamaño de la unión de los conjuntos asociados a los nodos seleccionados.
+- En cada ronda, los fallos son independientes y tienen una probabilidad común (p).
+- La asignación de la ronda anterior escala las ganancias marginales de los vecinos mediante (1 + \alpha \sum_j x_j).
+- Las ganancias marginales se alinean con el orden de inserción de las claves de `sets_by_node`; los identificadores pueden ser arbitrarios.
+- Las semillas permiten reproducir los escenarios sintéticos.
 
-Estos supuestos describen el modelo computacional utilizado en esta implementación. Si el enunciado del proyecto define otra interpretación para los fallos, costos o interacciones entre nodos, el modelo debe ajustarse antes de presentar los resultados como equivalentes.
+Estos supuestos describen la implementación, no necesariamente cualquier formulación externa del problema. Si el enunciado académico define otra semántica de fallos o externalidades, debe prevalecer ese enunciado.
 
 ## Requisitos
 
-- Python **3.10 o superior**.
-- Matplotlib **3.8 o superior** (opcional; se utiliza para generar las gráficas del benchmark).
+- Python 3.10 o superior.
+- Matplotlib 3.8 o superior para generar gráficas (opcional).
 
-No se requieren dependencias externas para ejecutar los algoritmos y las pruebas unitarias.
+Los algoritmos y las pruebas utilizan únicamente la biblioteca estándar de Python.
 
-## Instalación y ejecución
+## Instalación
 
-Clonar el repositorio y entrar a la carpeta:
+Clonar la rama principal:
 
 ```bash
-git clone -b feat/algoritmos-optimizacion https://github.com/Mttzputnik/ProyectoRed_ADAG2.git
+git clone https://github.com/Mttzputnik/ProyectoRed_ADAG2.git
 cd ProyectoRed_ADAG2
 ```
 
-Crear y activar un entorno virtual (recomendado):
+Crear un entorno virtual e instalar dependencias:
 
 **Windows (PowerShell):**
-
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-```
-
-**Linux / macOS:**
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Instalar las dependencias:
-
-```bash
 python -m pip install -r requirements.txt
 ```
 
-Ejecutar el ejemplo principal:
+**Linux/macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+## Ejecución
+
+Demostración:
 
 ```bash
 python main.py
 ```
 
-El programa muestra una demostración de selección voraz, comparación con el óptimo exacto en una instancia pequeña, reparto del presupuesto y simulación de cinco rondas.
-
-## Pruebas
-
-Ejecutar desde la raíz del repositorio:
+Pruebas:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
-
-Las pruebas cubren, entre otros aspectos:
-
-- Comparación del reparto voraz con el verificador exacto en una instancia pequeña.
-- Rechazo de secuencias de ganancias marginales que incumplen la concavidad discreta.
-- Comparación de Maximum Coverage voraz con el óptimo exacto.
-- Respeto del presupuesto en la variante con costos.
-- Reproducibilidad de la simulación cuando se utiliza la misma semilla.
-
-### Resultado de ejecución verificado
-
-En una ejecución local reportada para esta versión del proyecto se obtuvieron los siguientes resultados:
-
-**Pruebas unitarias**
-
-Comando:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-Resultado: **5 pruebas ejecutadas, 5 aprobadas y 0 fallidas** (`Ran 5 tests`, `OK`). Las pruebas verificaron el reparto voraz frente al método exacto en un caso pequeño, la validación de concavidad, las restricciones de presupuesto, la comparación de cobertura y la reproducibilidad de la simulación.
-
-**Programa principal**
-
-Comando:
-
-```bash
-python main.py
-```
-
-Resultados observados:
-
-- Selección de nodos: Greedy obtuvo utilidad `36.0`; el óptimo exacto de esa instancia también obtuvo `36.0` (cociente `1.0`).
-- Reparto de presupuesto: asignación `(0, 4, 8, 6)`, con utilidad `129.86505299450974`.
-- Simulación multirronda: se completaron cinco rondas. La utilidad de cobertura observada fue `36.0`, `35.0`, `34.0`, `36.0` y `36.0`, respectivamente.
-
-Estos resultados corresponden a la instancia de demostración y al entorno de esa ejecución; no constituyen una garantía de que Greedy alcance siempre el óptimo ni una evaluación con datos reales.
 
 ## Experimentos
 
@@ -149,73 +88,58 @@ Ejecutar el benchmark:
 python experiments/benchmark.py
 ```
 
-El experimento evalúa tamaños de entrada `N = 20, 40, 80, 160, 320`. Para cada tamaño mide la mediana de tres ejecuciones de los algoritmos de asignación y Maximum Coverage voraz.
+Se puede cambiar el número de repeticiones desde Python:
 
-Los resultados se guardan en la carpeta `results/`:
+```python
+from experiments.benchmark import run
+run(repetitions=15)
+```
 
-- `benchmark.csv`: tiempos medidos y parámetros de cada caso.
-- `allocation_heap.png`: gráfica de tiempo del algoritmo de asignación (si Matplotlib está instalado).
-- `maximum_coverage_greedy.png`: gráfica de tiempo de Maximum Coverage (si Matplotlib está instalado).
+El experimento genera `results/benchmark.csv` y una gráfica PNG por algoritmo. Incluye:
 
-Los tiempos dependen del equipo y del entorno de ejecución. Para comparar ejecuciones, se recomienda utilizar el mismo equipo, versión de Python y condiciones de carga.
+- Escalabilidad de asignación, Maximum Coverage, cobertura con costos y simulación multirronda.
+- Comparación voraz/exacto de Maximum Coverage para tamaños pequeños.
+- Comparación voraz/exacto de asignación en instancias acotadas.
 
-### Resultados obtenidos
+El CSV registra parámetros, repeticiones, mediana, promedio, desviación estándar y razón de utilidad respecto al exacto cuando aplica. Los métodos exactos se restringen a instancias pequeñas para evitar tiempos combinatorios excesivos.
 
-En una ejecución del benchmark se obtuvieron los siguientes tiempos:
+## Complejidad y garantías
 
-| N | Presupuesto | K | Asignación con heap (s) | Maximum Coverage Greedy (s) |
-|---:|---:|---:|---:|---:|
-| 20 | 400 | 5 | 0.0019010530 | 0.0001553600 |
-| 40 | 800 | 10 | 0.0071842540 | 0.0010985730 |
-| 80 | 1600 | 20 | 0.0284899630 | 0.0071208710 |
-| 160 | 3200 | 40 | 0.1124934110 | 0.0376548490 |
-| 320 | 6400 | 80 | 0.4672669350 | 0.3410846570 |
+| Algoritmo | Complejidad / garantía |
+|---|---|
+| `greedy_allocate` | (O(N + B\log N)) tiempo; óptimo bajo concavidad discreta y factibilidad del presupuesto. |
+| `greedy_max_coverage` | (O(Nk)) evaluaciones marginales; garantía clásica (1-1/e) para Maximum Coverage monótono con cardinalidad. El costo real depende de las operaciones sobre conjuntos. |
+| `exact_max_coverage` | ({N \choose k}) candidatos; exponencial. |
+| `greedy_budgeted_coverage` | Heurística marginal/costo; no se le atribuye automáticamente la garantía (1-1/e). |
+| `run_rounds` | Depende del número de rondas, nodos activos, selección y asignación de cada ronda. Las externalidades no heredan automáticamente garantías de submodularidad. |
 
-Los tiempos corresponden a una ejecución concreta y están expresados en segundos. En los cinco tamaños evaluados, el tiempo medido aumentó al incrementar el tamaño de entrada. Para N = 320, la asignación con heap registró aproximadamente 0.4673 s y Maximum Coverage Greedy aproximadamente 0.3411 s.
+## Resultados y reproducibilidad
 
-Esta tabla permite comparar el comportamiento observado en el entorno de prueba. No constituye por sí sola una demostración experimental de las cotas asintóticas: los tiempos dependen del equipo, del entorno y de las condiciones de ejecución.
+Los tiempos se deben generar en el equipo donde se realiza la evaluación. No se fijan aquí cifras de rendimiento que puedan confundirse con resultados de una ejecución que no se haya realizado en ese entorno.
 
+Para reproducir una ejecución, registrar la versión de Python, equipo, parámetros, semilla y número de repeticiones junto al CSV producido.
 
-## Estructura del repositorio
+## Estructura
 
 ```text
 ProyectoRed_ADAG2/
 ├── src/
-│   ├── allocation.py       # Asignación de presupuesto
-│   ├── selection.py        # Algoritmos de selección
-│   ├── simulation.py       # Simulación por rondas
-│   ├── instances.py        # Generación de instancias sintéticas
-│   └── __init__.py
+│   ├── allocation.py
+│   ├── selection.py
+│   ├── simulation.py
+│   └── instances.py
 ├── tests/
-│   └── test_algorithms.py  # Pruebas unitarias
+│   └── test_algorithms.py
 ├── experiments/
-│   └── benchmark.py        # Experimentos de rendimiento
-├── main.py                 # Ejecución de demostración
+│   └── benchmark.py
+├── docs/
+│   └── analisis_teorico.md
+├── results/                 # CSV y gráficas generados
+├── main.py
 ├── requirements.txt
-├── ANALISIS_TEORICO.md     # Formalización y análisis de algoritmos
 └── README.md
 ```
 
-## Complejidad
+## Documentación teórica
 
-Las complejidades principales, bajo las representaciones utilizadas, son:
-
-| Algoritmo | Complejidad temporal | Observación |
-|---|---:|---|
-| Asignación con max-heap | `O(N + B log N)` | `N`: número de nodos; `B`: unidades asignadas. |
-| Maximum Coverage voraz | `O(Nk)` evaluaciones marginales | El costo real también depende de las operaciones sobre conjuntos. |
-| Maximum Coverage exacto | `O(C(N,k) · U)` como cota simple | Exponencial; se reserva para instancias pequeñas. |
-
-Donde `k` es el número de nodos que se seleccionan y `U` es el tamaño del universo de elementos cubiertos.
-
-## Limitaciones
-
-- El generador de instancias es sintético; los resultados no deben interpretarse como mediciones de una red real.
-- El algoritmo exacto de selección tiene crecimiento combinatorio y no está pensado para entradas grandes.
-- La heurística de cobertura con costos **no tiene atribuida en este proyecto una garantía automática de aproximación de `1 - 1/e`**.
-- La garantía clásica de `1 - 1/e` corresponde a Maximum Coverage monótono submodular con restricción de cardinalidad. No se extiende automáticamente a la variante con costos ni a la simulación con efectos entre vecinos.
-- El modelo de fallos y de influencia de vecinos es una hipótesis de simulación explícita; debe contrastarse con la definición final del problema.
-
-## Análisis teórico
-
-El documento [ANALISIS_TEORICO.md](ANALISIS_TEORICO.md) desarrolla la formalización del reparto discreto, la justificación de optimalidad del algoritmo con heap, la submodularidad de Maximum Coverage, la discusión de NP-dureza y el alcance de las garantías de aproximación.
+La formalización, las pruebas de optimalidad, el análisis de submodularidad y las limitaciones de las garantías se desarrollan en [docs/analisis_teorico.md](docs/analisis_teorico.md).
