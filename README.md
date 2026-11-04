@@ -111,6 +111,36 @@ Las pruebas cubren, entre otros aspectos:
 - Respeto del presupuesto en la variante con costos.
 - Reproducibilidad de la simulación cuando se utiliza la misma semilla.
 
+### Resultado de ejecución verificado
+
+En una ejecución local reportada para esta versión del proyecto se obtuvieron los siguientes resultados:
+
+**Pruebas unitarias**
+
+Comando:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Resultado: **5 pruebas ejecutadas, 5 aprobadas y 0 fallidas** (`Ran 5 tests`, `OK`). Las pruebas verificaron el reparto voraz frente al método exacto en un caso pequeño, la validación de concavidad, las restricciones de presupuesto, la comparación de cobertura y la reproducibilidad de la simulación.
+
+**Programa principal**
+
+Comando:
+
+```bash
+python main.py
+```
+
+Resultados observados:
+
+- Selección de nodos: Greedy obtuvo utilidad `36.0`; el óptimo exacto de esa instancia también obtuvo `36.0` (cociente `1.0`).
+- Reparto de presupuesto: asignación `(0, 4, 8, 6)`, con utilidad `129.86505299450974`.
+- Simulación multirronda: se completaron cinco rondas. La utilidad de cobertura observada fue `36.0`, `35.0`, `34.0`, `36.0` y `36.0`, respectivamente.
+
+Estos resultados corresponden a la instancia de demostración y al entorno de esa ejecución; no constituyen una garantía de que Greedy alcance siempre el óptimo ni una evaluación con datos reales.
+
 ## Experimentos
 
 Ejecutar el benchmark:
