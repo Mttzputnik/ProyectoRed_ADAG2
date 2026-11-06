@@ -80,6 +80,18 @@ Pruebas:
 python -m unittest discover -s tests -v
 ```
 
+## Interfaz gráfica interactiva
+
+El laboratorio visual permite modificar parámetros y observar las tres partes del modelo: selección de nodos, asignación de presupuesto y simulación multirronda. También muestra la matriz de cobertura y la matriz de adyacencia de la red sintética.
+
+Iniciar desde la raíz del proyecto:
+
+```bash
+streamlit run app.py
+```
+
+La aplicación abre un panel local en el navegador. Los parámetros se configuran en la barra lateral y el botón **Generar y ejecutar** actualiza la instancia. La comparación exacta de cobertura se limita a instancias pequeñas porque utiliza enumeración.
+
 ## Experimentos
 
 Ejecutar el benchmark:
