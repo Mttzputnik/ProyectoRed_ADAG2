@@ -37,7 +37,8 @@ Estos supuestos describen la implementación, no necesariamente cualquier formul
 ## Requisitos
 
 - Python 3.10 o superior.
-- Matplotlib 3.8 o superior para generar gráficas (opcional).
+- Matplotlib 3.8 o superior para generar gráficas.
+- NetworkX 3.3 o superior para construir y visualizar la topología de la red en la interfaz.
 
 Los algoritmos y las pruebas utilizan únicamente la biblioteca estándar de Python.
 
@@ -82,7 +83,7 @@ python -m unittest discover -s tests -v
 
 ## Interfaz gráfica interactiva
 
-El laboratorio visual permite modificar parámetros y observar las tres partes del modelo: selección de nodos, asignación de presupuesto y simulación multirronda. También muestra la matriz de cobertura y la matriz de adyacencia de la red sintética.
+El laboratorio visual permite modificar parámetros y observar las tres partes del modelo: selección de nodos, asignación de presupuesto y simulación multirronda. También muestra la topología de la red con NetworkX, permite cambiar entre distribuciones (spring, circular, Kamada-Kawai y shell), resalta los nodos seleccionados por Maximum Coverage y conserva las matrices de cobertura y adyacencia.
 
 Iniciar desde la raíz del proyecto:
 
@@ -90,7 +91,7 @@ Iniciar desde la raíz del proyecto:
 streamlit run app.py
 ```
 
-La aplicación abre un panel local en el navegador. Los parámetros se configuran en la barra lateral y el botón **Generar y ejecutar** actualiza la instancia. La comparación exacta de cobertura se limita a instancias pequeñas porque utiliza enumeración.
+La aplicación abre un panel local en el navegador. Los parámetros se configuran en la barra lateral y el botón **Generar y ejecutar** actualiza la instancia. La comparación exacta de cobertura se limita a instancias pequeñas porque utiliza enumeración. La pestaña **Datos de la red** representa el grafo que también consume la simulación; los diseños visuales solo cambian la posición de los nodos, no las conexiones.
 
 ## Experimentos
 
