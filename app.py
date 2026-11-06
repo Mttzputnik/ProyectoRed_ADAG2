@@ -1,9 +1,12 @@
 """Laboratorio visual e interactivo para Proyecto Red ADAG2.
 
-Ejecutar desde la raíz: streamlit run app.py
+Ejecutar desde la raíz: python -m streamlit run app.py
 """
 from __future__ import annotations
 
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+import networkx as nx
 import pandas as pd
 import streamlit as st
 
@@ -13,7 +16,7 @@ from src.instances import (
     generate_concave_marginals,
     generate_graph,
 )
-from src.selection import greedy_max_coverage, exact_max_coverage, greedy_budgeted_coverage
+from src.selection import greedy_max_coverage, exact_max_coverage
 from src.simulation import run_rounds
 
 
@@ -63,6 +66,16 @@ active_marginals = [marginals[node] for node in selection.selected]
 allocation = None
 if selection.selected and cfg["budget"] <= sum(map(len, active_marginals)):
     allocation = greedy_allocate(active_marginals, cfg["budget"])
+
+# Convertimos el mismo grafo de adyacencia usado por la simulación a NetworkX.
+network = nx.Graph()
+network.add_nodes_from(graph.keys())
+network.add_edges_from(
+    (node, neighbor)
+    for node, neighbors in graph.items()
+    for neighbor in neighbors
+    if node < neighbor
+)
 
 tabs = st.tabs(["Resumen", "1 · Selección", "2 · Presupuesto", "3 · Simulación", "Datos de la red"])
 
@@ -183,19 +196,88 @@ with tabs[3]:
     st.caption("La influencia vecinal escala las ganancias para la ronda siguiente; no implica una garantía de aproximación para toda la simulación.")
 
 with tabs[4]:
-    st.subheader("Estructura de la instancia sintética")
-    st.write("Cada fila representa un nodo y cada columna un elemento del universo. Un 1 indica que el nodo cubre ese elemento.")
-    matrix = pd.DataFrame(
-        {f"Elemento {element}": [int(element in sets_by_node[node]) for node in sets_by_node]
-         for element in range(cfg["universe_size"])},
-        index=[f"Nodo {node}" for node in sets_by_node],
+    st.subheader("Visualización de la red con NetworkX")
+    st.write(
+        "Cada círculo representa un nodo y cada línea una conexión. "
+        "Los nodos seleccionados por Maximum Coverage se resaltan en la visualización."
     )
-    st.dataframe(matrix, use_container_width=True, height=360)
-    st.write("**Matriz de adyacencia:** un 1 indica que dos nodos están conectados.")
-    adjacency = pd.DataFrame(
-        {f"Nodo {node}": [int(other in graph[node]) for other in graph]
-         for node in graph},
-        index=[f"Nodo {node}" for node in graph],
+
+    col_a, col_b, col_c = st.columns(3)
+    col_a.metric("Nodos", network.number_of_nodes())
+    col_b.metric("Conexiones", network.number_of_edges())
+    col_c.metric("Grado promedio", f"{(sum(dict(network.degree()).values()) / network.number_of_nodes()):.2f}")
+
+    layout_name = st.selectbox(
+        "Distribución visual de los nodos",
+        ["Spring (fuerzas)", "Circular", "Kamada-Kawai", "Shell"],
+        help="El diseño cambia la posición de los nodos, no las conexiones ni los resultados del algoritmo.",
     )
-    st.dataframe(adjacency, use_container_width=True)
+    show_labels = st.checkbox("Mostrar identificadores de los nodos", value=True)
+    highlight_selected = st.checkbox("Resaltar nodos seleccionados", value=True)
+
+    if layout_name == "Circular":
+        positions = nx.circular_layout(network)
+    elif layout_name == "Kamada-Kawai":
+        positions = nx.kamada_kawai_layout(network)
+    elif layout_name == "Shell":
+        positions = nx.shell_layout(network)
+    else:
+        positions = nx.spring_layout(network, seed=cfg["seed"], k=1.2 / (cfg["n_nodes"] ** 0.5))
+
+    selected_nodes = set(selection.selected) if highlight_selected else set()
+    other_nodes = [node for node in network.nodes if node not in selected_nodes]
+    degree = dict(network.degree())
+    node_sizes = [420 + 90 * degree[node] for node in network.nodes]
+
+    fig, ax = plt.subplots(figsize=(11, 7))
+    nx.draw_networkx_edges(network, positions, ax=ax, edge_color="gray", alpha=0.45, width=1.2)
+    nx.draw_networkx_nodes(
+        network, positions, nodelist=other_nodes, ax=ax,
+        node_color="skyblue", node_size=[420 + 90 * degree[node] for node in other_nodes],
+        edgecolors="white", linewidths=1.2,
+    )
+    if selected_nodes:
+        nx.draw_networkx_nodes(
+            network, positions, nodelist=list(selected_nodes), ax=ax,
+            node_color="darkorange", node_size=[420 + 90 * degree[node] for node in selected_nodes],
+            edgecolors="black", linewidths=1.4,
+        )
+    if show_labels:
+        nx.draw_networkx_labels(network, positions, ax=ax, font_size=9, font_weight="bold")
+
+    legend_items = [Line2D([0], [0], marker="o", color="w", label="Nodo no seleccionado",
+                           markerfacecolor="skyblue", markeredgecolor="white", markersize=10)]
+    if selected_nodes:
+        legend_items.append(Line2D([0], [0], marker="o", color="w", label="Nodo seleccionado",
+                                   markerfacecolor="darkorange", markeredgecolor="black", markersize=10))
+    ax.legend(handles=legend_items, loc="best")
+    ax.set_title("Topología de la red sintética")
+    ax.axis("off")
+    fig.tight_layout()
+    st.pyplot(fig, use_container_width=True)
+    plt.close(fig)
+
+    st.caption(
+        "La posición de los nodos es una distribución gráfica calculada por NetworkX. "
+        "No representa coordenadas geográficas ni modifica el grafo utilizado por la simulación."
+    )
+
+    with st.expander("Matriz de cobertura"):
+        st.write("Cada fila representa un nodo y cada columna un elemento del universo. Un 1 indica que el nodo cubre ese elemento.")
+        matrix = pd.DataFrame(
+            {f"Elemento {element}": [int(element in sets_by_node[node]) for node in sets_by_node]
+             for element in range(cfg["universe_size"])},
+            index=[f"Nodo {node}" for node in sets_by_node],
+        )
+        st.dataframe(matrix, use_container_width=True, height=360)
+
+    with st.expander("Matriz de adyacencia"):
+        st.write("Un 1 indica que dos nodos están conectados.")
+        adjacency = pd.DataFrame(
+            {f"Nodo {node}": [int(other in graph[node]) for other in graph]
+             for node in graph},
+            index=[f"Nodo {node}" for node in graph],
+        )
+        st.dataframe(adjacency, use_container_width=True)
+
     st.caption(f"Semilla utilizada: {cfg['seed']}. Los mismos parámetros y semilla reproducen la misma instancia.")
