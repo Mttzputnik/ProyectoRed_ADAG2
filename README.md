@@ -3,6 +3,12 @@
 Implementación académica de algoritmos de optimización para un problema de selección de nodos y asignación discreta de presupuesto, con simulación por rondas, fallos y efectos de vecindad.
 
 El repositorio reúne algoritmos voraces, verificadores exactos para instancias pequeñas y experimentos reproducibles. Los datos de los experimentos son sintéticos y sirven para estudiar el comportamiento de las implementaciones; no representan por sí solos resultados de un sistema real.
+# Integrantes
+
+| Nombre Completo | Código / ID |
+| :--- | :---: |
+| Mateo Andrés Fracica Calderón | 11419 |
+| Andrés Felipe Ríos Castaño | 31381 |
 
 ## Contenido
 
