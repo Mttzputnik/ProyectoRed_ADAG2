@@ -90,7 +90,9 @@ with tabs[1]:
     st.subheader("Maximum Coverage: ¿qué nodos cubren más elementos?")
     left, right = st.columns(2)
     left.metric("Cobertura voraz", int(selection.utility))
-    left.write("Selección:", list(selection.selected))
+    with left.container():
+        st.markdown("**Selección:**")
+        st.write(list(selection.selected))
     exact_enabled = st.checkbox(
         "Comparar con la solución exacta (enumeración)", value=cfg["n_nodes"] <= 16,
         disabled=cfg["n_nodes"] > 16,
